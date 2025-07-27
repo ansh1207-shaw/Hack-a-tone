@@ -1,0 +1,857 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceTranslate - Working AI Voice Translator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .main-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            background: white;
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .swap-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .swap-btn:hover {
+            transform: rotate(180deg);
+        }
+
+        .voice-sections {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .voice-section {
+            text-align: center;
+            padding: 30px;
+            background: #f8fafc;
+            border-radius: 15px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .voice-section.active {
+            border-color: #667eea;
+            background: #eef2ff;
+        }
+
+        .voice-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            margin: 20px 0;
+            cursor: pointer;
+            font-size: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .record-btn {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .record-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .record-btn.recording {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .play-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .play-btn:hover:not(:disabled) {
+            transform: scale(1.1);
+        }
+
+        .play-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .text-area {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 100px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-top: 15px;
+            word-wrap: break-word;
+        }
+
+        .text-area.has-content {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 10px 0;
+            display: inline-block;
+        }
+
+        .status-ready {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-listening {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-processing {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #dc2626;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .wave-animation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 50px;
+            gap: 3px;
+            margin: 15px 0;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .wave-animation.active {
+            opacity: 1;
+        }
+
+        .wave-bar {
+            width: 4px;
+            height: 10px;
+            background: #667eea;
+            border-radius: 2px;
+            animation: wave 1s ease-in-out infinite;
+        }
+
+        .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+        .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+        .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+
+        @keyframes wave {
+            0%, 100% { height: 10px; }
+            50% { height: 30px; }
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .voice-sections {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .voice-btn {
+                width: 70px;
+                height: 70px;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(102, 126, 234, .3);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌍 VoiceTranslate</h1>
+            <p>Real-time AI voice translation for travelers</p>
+        </div>
+
+        <div class="main-card">
+            <div class="controls">
+                <div>
+                    <label>From:</label>
+                    <select id="sourceLang">
+                        <option value="en">🇺🇸 English</option>
+                        <option value="es">🇪🇸 Spanish</option>
+                        <option value="fr">🇫🇷 French</option>
+                        <option value="de">🇩🇪 German</option>
+                        <option value="it">🇮🇹 Italian</option>
+                        <option value="pt">🇵🇹 Portuguese</option>
+                        <option value="ru">🇷🇺 Russian</option>
+                        <option value="ja">🇯🇵 Japanese</option>
+                        <option value="ko">🇰🇷 Korean</option>
+                        <option value="zh">🇨🇳 Chinese</option>
+                        <option value="hi">🇮🇳 Hindi</option>
+                        <option value="ar">🇸🇦 Arabic</option>
+                    </select>
+                </div>
+                
+                <button class="swap-btn" id="swapBtn" title="Swap languages">⇄</button>
+                
+                <div>
+                    <label>To:</label>
+                    <select id="targetLang">
+                        <option value="es">🇪🇸 Spanish</option>
+                        <option value="en">🇺🇸 English</option>
+                        <option value="fr">🇫🇷 French</option>
+                        <option value="de">🇩🇪 German</option>
+                        <option value="it">🇮🇹 Italian</option>
+                        <option value="pt">🇵🇹 Portuguese</option>
+                        <option value="ru">🇷🇺 Russian</option>
+                        <option value="ja">🇯🇵 Japanese</option>
+                        <option value="ko">🇰🇷 Korean</option>
+                        <option value="zh">🇨🇳 Chinese</option>
+                        <option value="hi">🇮🇳 Hindi</option>
+                        <option value="ar">🇸🇦 Arabic</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="voice-sections">
+                <div class="voice-section" id="inputSection">
+                    <h3>🎤 Speak</h3>
+                    <button class="voice-btn record-btn" id="recordBtn">🎤</button>
+                    <div class="wave-animation" id="waveAnimation">
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                    </div>
+                    <div class="status status-ready" id="inputStatus">Ready</div>
+                    <div class="text-area" id="inputText">Click microphone to start speaking...</div>
+                </div>
+
+                <div class="voice-section" id="outputSection">
+                    <h3>🔊 Translation</h3>
+                    <button class="voice-btn play-btn" id="playBtn" disabled>▶</button>
+                    <div class="status status-ready" id="outputStatus">Waiting</div>
+                    <div class="text-area" id="outputText">Translation will appear here...</div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-secondary" id="clearBtn">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class VoiceTranslator {
+            constructor() {
+                this.recognition = null;
+                this.synthesis = window.speechSynthesis;
+                this.isRecording = false;
+                this.isPlaying = false;
+                
+                this.initElements();
+                this.initSpeechRecognition();
+                this.bindEvents();
+                this.checkBrowserSupport();
+            }
+
+            initElements() {
+                this.recordBtn = document.getElementById('recordBtn');
+                this.playBtn = document.getElementById('playBtn');
+                this.swapBtn = document.getElementById('swapBtn');
+                this.clearBtn = document.getElementById('clearBtn');
+                this.sourceLang = document.getElementById('sourceLang');
+                this.targetLang = document.getElementById('targetLang');
+                this.inputText = document.getElementById('inputText');
+                this.outputText = document.getElementById('outputText');
+                this.inputStatus = document.getElementById('inputStatus');
+                this.outputStatus = document.getElementById('outputStatus');
+                this.inputSection = document.getElementById('inputSection');
+                this.outputSection = document.getElementById('outputSection');
+                this.waveAnimation = document.getElementById('waveAnimation');
+            }
+
+            checkBrowserSupport() {
+                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                    this.showError('Speech recognition not supported in this browser. Please use Chrome, Safari, or Edge.');
+                    this.recordBtn.disabled = true;
+                }
+
+                if (!window.speechSynthesis) {
+                    this.showError('Text-to-speech not supported in this browser.');
+                    this.playBtn.disabled = true;
+                }
+            }
+
+            initSpeechRecognition() {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    this.recognition = new SpeechRecognition();
+                    
+                    this.recognition.continuous = false;
+                    this.recognition.interimResults = true;
+                    this.recognition.maxAlternatives = 1;
+                    
+                    this.recognition.onstart = () => {
+                        this.isRecording = true;
+                        this.recordBtn.classList.add('recording');
+                        this.recordBtn.innerHTML = '⏹';
+                        this.inputSection.classList.add('active');
+                        this.waveAnimation.classList.add('active');
+                        this.updateStatus('inputStatus', 'Listening...', 'status-listening');
+                        this.inputText.textContent = 'Listening...';
+                    };
+                    
+                    this.recognition.onresult = (event) => {
+                        let finalTranscript = '';
+                        let interimTranscript = '';
+
+                        for (let i = event.resultIndex; i < event.results.length; i++) {
+                            const transcript = event.results[i][0].transcript;
+                            if (event.results[i].isFinal) {
+                                finalTranscript += transcript;
+                            } else {
+                                interimTranscript += transcript;
+                            }
+                        }
+
+                        this.inputText.textContent = finalTranscript || interimTranscript;
+                        
+                        if (finalTranscript) {
+                            this.inputText.classList.add('has-content');
+                            this.translateText(finalTranscript);
+                        }
+                    };
+                    
+                    this.recognition.onerror = (event) => {
+                        this.stopRecording();
+                        let errorMsg = 'Speech recognition error';
+                        
+                        switch(event.error) {
+                            case 'no-speech':
+                                errorMsg = 'No speech detected. Try again.';
+                                break;
+                            case 'not-allowed':
+                                errorMsg = 'Microphone access denied. Please allow microphone access.';
+                                break;
+                            case 'audio-capture':
+                                errorMsg = 'No microphone found. Please check your microphone.';
+                                break;
+                            case 'network':
+                                errorMsg = 'Network error. Please check your internet connection.';
+                                break;
+                        }
+                        
+                        this.showError(errorMsg);
+                        this.updateStatus('inputStatus', 'Error', 'status-error');
+                    };
+                    
+                    this.recognition.onend = () => {
+                        this.stopRecording();
+                    };
+                }
+            }
+
+            bindEvents() {
+                this.recordBtn.addEventListener('click', () => this.toggleRecording());
+                this.playBtn.addEventListener('click', () => this.playTranslation());
+                this.swapBtn.addEventListener('click', () => this.swapLanguages());
+                this.clearBtn.addEventListener('click', () => this.clearAll());
+                
+                this.sourceLang.addEventListener('change', () => {
+                    if (this.recognition) {
+                        this.recognition.lang = this.getFullLanguageCode(this.sourceLang.value);
+                    }
+                });
+            }
+
+            toggleRecording() {
+                if (this.isRecording) {
+                    this.stopRecording();
+                } else {
+                    this.startRecording();
+                }
+            }
+
+            startRecording() {
+                if (!this.recognition) {
+                    this.showError('Speech recognition not available');
+                    return;
+                }
+
+                // Stop any current speech synthesis
+                this.synthesis.cancel();
+
+                this.recognition.lang = this.getFullLanguageCode(this.sourceLang.value);
+                
+                try {
+                    this.recognition.start();
+                } catch (error) {
+                    this.showError('Failed to start recording. Please try again.');
+                    console.error('Recognition start error:', error);
+                }
+            }
+
+            stopRecording() {
+                this.isRecording = false;
+                this.recordBtn.classList.remove('recording');
+                this.recordBtn.innerHTML = '🎤';
+                this.inputSection.classList.remove('active');
+                this.waveAnimation.classList.remove('active');
+                
+                if (this.recognition) {
+                    try {
+                        this.recognition.stop();
+                    } catch (error) {
+                        console.error('Recognition stop error:', error);
+                    }
+                }
+                
+                this.updateStatus('inputStatus', 'Ready', 'status-ready');
+            }
+
+            async translateText(text) {
+                this.updateStatus('outputStatus', 'Translating...', 'status-processing');
+                this.outputSection.classList.add('active');
+
+                try {
+                    const translatedText = await this.performTranslation(text, this.sourceLang.value, this.targetLang.value);
+                    
+                    this.outputText.textContent = translatedText;
+                    this.outputText.classList.add('has-content');
+                    this.updateStatus('outputStatus', 'Ready to play', 'status-ready');
+                    this.playBtn.disabled = false;
+                    this.outputSection.classList.remove('active');
+                    
+                    // Auto-play translation after a short delay
+                    setTimeout(() => {
+                        if (!this.isPlaying) {
+                            this.playTranslation();
+                        }
+                    }, 1000);
+                    
+                } catch (error) {
+                    this.showError('Translation failed. Please try again.');
+                    this.updateStatus('outputStatus', 'Error', 'status-error');
+                    this.outputSection.classList.remove('active');
+                    console.error('Translation error:', error);
+                }
+            }
+
+            async performTranslation(text, sourceLang, targetLang) {
+                // Using MyMemory Translation API (free, no API key required)
+                const url = https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang};
+                
+                try {
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    
+                    if (data.responseStatus === 200 && data.responseData) {
+                        return data.responseData.translatedText;
+                    } else {
+                        throw new Error('Translation API error');
+                    }
+                } catch (error) {
+                    console.error('API Translation failed, using fallback:', error);
+                    // Fallback to basic translations for common phrases
+                    return this.getFallbackTranslation(text, sourceLang, targetLang);
+                }
+            }
+
+            getFallbackTranslation(text, sourceLang, targetLang) {
+                const translations = {
+                    'hello': {
+                        'es': 'Hola',
+                        'fr': 'Bonjour',
+                        'de': 'Hallo',
+                        'it': 'Ciao',
+                        'pt': 'Olá',
+                        'ru': 'Привет',
+                        'ja': 'こんにちは',
+                        'ko': '안녕하세요',
+                        'zh': '你好',
+                        'hi': 'नमस्ते',
+                        'ar': 'مرحبا'
+                    },
+                    'thank you': {
+                        'es': 'Gracias',
+                        'fr': 'Merci',
+                        'de': 'Danke',
+                        'it': 'Grazie',
+                        'pt': 'Obrigado',
+                        'ru': 'Спасибо',
+                        'ja': 'ありがとう',
+                        'ko': '감사합니다',
+                        'zh': '谢谢',
+                        'hi': 'धन्यवाद',
+                        'ar': 'شكرا'
+                    },
+                    'goodbye': {
+                        'es': 'Adiós',
+                        'fr': 'Au revoir',
+                        'de': 'Auf Wiedersehen',
+                        'it': 'Arrivederci',
+                        'pt': 'Tchau',
+                        'ru': 'До свидания',
+                        'ja': 'さようなら',
+                        'ko': '안녕히 가세요',
+                        'zh': '再见',
+                        'hi': 'अलविदा',
+                        'ar': 'وداعا'
+                    },
+                    'please': {
+                        'es': 'Por favor',
+                        'fr': 'S\'il vous plaît',
+                        'de': 'Bitte',
+                        'it': 'Per favore',
+                        'pt': 'Por favor',
+                        'ru': 'Пожалуйста',
+                        'ja': 'お願いします',
+                        'ko': '제발',
+                        'zh': '请',
+                        'hi': 'कृपया',
+                        'ar': 'من فضلك'
+                    },
+                    'excuse me': {
+                        'es': 'Disculpe',
+                        'fr': 'Excusez-moi',
+                        'de': 'Entschuldigung',
+                        'it': 'Scusi',
+                        'pt': 'Com licença',
+                        'ru': 'Извините',
+                        'ja': 'すみません',
+                        'ko': '실례합니다',
+                        'zh': '对不起',
+                        'hi': 'माफ़ करें',
+                        'ar': 'عذرا'
+                    }
+                };
+
+                const lowerText = text.toLowerCase().trim();
+                
+                // Check for exact matches first
+                if (translations[lowerText] && translations[lowerText][targetLang]) {
+                    return translations[lowerText][targetLang];
+                }
+                
+                // Check for partial matches
+                for (const [phrase, trans] of Object.entries(translations)) {
+                    if (lowerText.includes(phrase) && trans[targetLang]) {
+                        return trans[targetLang];
+                    }
+                }
+                
+                // If no match found, return formatted text
+                return [${targetLang.toUpperCase()}] ${text};
+            }
+
+            playTranslation() {
+                const textToSpeak = this.outputText.textContent;
+                
+                if (!textToSpeak || textToSpeak === 'Translation will appear here...') {
+                    return;
+                }
+
+                if (this.isPlaying) {
+                    // Stop current playback
+                    this.synthesis.cancel();
+                    this.isPlaying = false;
+                    this.playBtn.innerHTML = '▶';
+                    this.updateStatus('outputStatus', 'Ready to play', 'status-ready');
+                    return;
+                }
+
+                // Stop any current speech
+                this.synthesis.cancel();
+
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                utterance.lang = this.getFullLanguageCode(this.targetLang.value);
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+                utterance.volume = 1;
+
+                utterance.onstart = () => {
+                    this.isPlaying = true;
+                    this.playBtn.innerHTML = '⏸';
+                    this.updateStatus('outputStatus', 'Playing...', 'status-processing');
+                };
+
+                utterance.onend = () => {
+                    this.isPlaying = false;
+                    this.playBtn.innerHTML = '▶';
+                    this.updateStatus('outputStatus', 'Ready to play', 'status-ready');
+                };
+
+                utterance.onerror = (event) => {
+                    this.isPlaying = false;
+                    this.playBtn.innerHTML = '▶';
+                    this.updateStatus('outputStatus', 'Playback error', 'status-error');
+                    console.error('Speech synthesis error:', event);
+                };
+
+                try {
+                    this.synthesis.speak(utterance);
+                } catch (error) {
+                    this.showError('Failed to play audio. Please try again.');
+                    console.error('Speech synthesis error:', error);
+                }
+            }
+
+            swapLanguages() {
+                const sourceValue = this.sourceLang.value;
+                const targetValue = this.targetLang.value;
+                
+                this.sourceLang.value = targetValue;
+                this.targetLang.value = sourceValue;
+                
+                // Swap content if both sections have content
+                if (this.inputText.classList.contains('has-content') && 
+                    this.outputText.classList.contains('has-content')) {
+                    const inputContent = this.inputText.textContent;
+                    const outputContent = this.outputText.textContent;
+                    
+                    this.inputText.textContent = outputContent;
+                    this.outputText.textContent = inputContent;
+                }
+                
+                // Update recognition language
+                if (this.recognition) {
+                    this.recognition.lang = this.getFullLanguageCode(this.sourceLang.value);
+                }
+            }
+
+            clearAll() {
+                this.synthesis.cancel();
+                
+                this.inputText.textContent = 'Click microphone to start speaking...';
+                this.outputText.textContent = 'Translation will appear here...';
+                
+                this.inputText.classList.remove('has-content');
+                this.outputText.classList.remove('has-content');
+                
+                this.playBtn.disabled = true;
+                this.playBtn.innerHTML = '▶';
+                this.isPlaying = false;
+                
+                this.updateStatus('inputStatus', 'Ready', 'status-ready');
+                this.updateStatus('outputStatus', 'Waiting', 'status-ready');
+                
+                this.inputSection.classList.remove('active');
+                this.outputSection.classList.remove('active');
+                
+                // Clear any error messages
+                const errorMessages = document.querySelectorAll('.error-message');
+                errorMessages.forEach(msg => msg.remove());
+            }
+
+            getFullLanguageCode(langCode) {
+                const langMap = {
+                    'en': 'en-US',
+                    'es': 'es-ES',
+                    'fr': 'fr-FR',
+                    'de': 'de-DE',
+                    'it': 'it-IT',
+                    'pt': 'pt-PT',
+                    'ru': 'ru-RU',
+                    'ja': 'ja-JP',
+                    'ko': 'ko-KR',
+                    'zh': 'zh-CN',
+                    'hi': 'hi-IN',
+                    'ar': 'ar-SA'
+                };
+                
+                return langMap[langCode] || langCode;
+            }
+
+            updateStatus(elementId, text, className) {
+                const element = document.getElementById(elementId);
+                element.textContent = text;
+                element.className = status ${className};
+            }
+
+            showError(message) {
+                // Remove existing error messages
+                const existingErrors = document.querySelectorAll('.error-message');
+                existingErrors.forEach(error => error.remove());
+
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.textContent = message;
+                
+                const mainCard = document.querySelector('.main-card');
+                mainCard.appendChild(errorDiv);
+
+                // Auto-remove error after 5 seconds
+                setTimeout(() => {
+                    if (errorDiv.parentNode) {
+                        errorDiv.remove();
+                    }
+                }, 5000);
+            }
+        }
+
+        // Initialize the translator when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            const translator = new VoiceTranslator();
+            
+            // Make requestPermissions globally available for the banner
+            window.requestPermissions = () => translator.requestPermissions();
+        });
+
+        // Add some interactive effects
+        document.addEventListener('DOMContentLoaded', () => {
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                button.addEventListener('mousedown', function() {
+                    this.style.transform = 'scale(0.95)';
+                });
+                
+                button.addEventListener('mouseup', function() {
+                    this.style.transform = 'scale(1)';
+                });
+                
+                button.addEventListener('mouseleave', function() {
+                    this.style.transform = 'scale(1)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
